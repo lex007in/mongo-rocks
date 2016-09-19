@@ -596,6 +596,26 @@ namespace mongo {
                                                         int len,
                                                         bool enforceQuota,
                                                         UpdateNotifier* notifier ) {
+        return _updateRecord(txn, loc, /*unknown length*/ -1, data, len, enforceQuota, notifier);
+    }
+
+    StatusWith<RecordId> RocksRecordStore::updateRecordEx( OperationContext* txn,
+                                                          const RecordId& loc,
+                                                          int old_length,
+                                                          const char* data,
+                                                          int len,
+                                                          bool enforceQuota,
+                                                          UpdateNotifier* notifier ) {
+        return _updateRecord(txn, loc, old_length, data, len, enforceQuota, notifier);
+    }
+
+    StatusWith<RecordId> RocksRecordStore::_updateRecord( OperationContext* txn,
+                                                         const RecordId& loc,
+                                                         int old_length,
+                                                         const char* data,
+                                                         int len,
+                                                         bool enforceQuota,
+                                                         UpdateNotifier* notifier ) {
         std::string key(_makePrefixedKey(_prefix, loc));
 
         RocksRecoveryUnit* ru = RocksRecoveryUnit::getRocksRecoveryUnit( txn );
@@ -603,11 +623,13 @@ namespace mongo {
             throw WriteConflictException();
         }
 
-        std::string old_value;
-        auto status = ru->Get(key, &old_value);
-        invariantRocksOK(status);
+        if (old_length == -1) {
+            std::string old_value;
+            auto status = ru->Get(key, &old_value);
+            invariantRocksOK(status);
 
-        int old_length = old_value.size();
+            old_length = old_value.size();
+        }
 
         ru->writeBatch()->Put(key, rocksdb::Slice(data, len));
         if (_isOplog) {

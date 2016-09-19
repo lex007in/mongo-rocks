@@ -134,6 +134,14 @@ namespace mongo {
                                                   bool enforceQuota,
                                                   UpdateNotifier* notifier );
 
+        virtual StatusWith<RecordId> updateRecordEx( OperationContext* txn,
+                                                    const RecordId& oldLocation,
+                                                    int old_length,
+                                                    const char* data,
+                                                    int len,
+                                                    bool enforceQuota,
+                                                    UpdateNotifier* notifier );
+
         virtual bool updateWithDamagesSupported() const;
 
         virtual StatusWith<RecordData> updateWithDamages(OperationContext* txn,
@@ -247,6 +255,14 @@ namespace mongo {
 
         void _changeNumRecords(OperationContext* txn, int64_t amount);
         void _increaseDataSize(OperationContext* txn, int64_t amount);
+
+        StatusWith<RecordId> _updateRecord(OperationContext* txn,
+                                           const RecordId& oldLocation,
+                                           int old_length,
+                                           const char* data,
+                                           int len,
+                                           bool enforceQuota,
+                                           UpdateNotifier* notifier);
 
         rocksdb::DB* _db;                      // not owned
         RocksCounterManager* _counterManager;  // not owned
