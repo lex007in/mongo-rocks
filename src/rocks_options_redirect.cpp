@@ -27,31 +27,13 @@
  */
 
 
-#include <iostream>
-
-#include "mongo/util/options_parser/startup_option_init.h"
-#include "mongo/util/options_parser/startup_options.h"
-
 #include "rocks_global_options.h"
 
 namespace mongo {
-
-    MONGO_MODULE_STARTUP_OPTIONS_REGISTER(RocksOptions)(InitializerContext* context) {
-        return rocksGlobalOptions.add(&moe::startupOptions);
-    }
-
-    MONGO_STARTUP_OPTIONS_VALIDATE(RocksOptions)(InitializerContext* context) {
-        return Status::OK();
-    }
-
-    MONGO_STARTUP_OPTIONS_STORE(RocksOptions)(InitializerContext* context) {
-        Status ret = rocksGlobalOptions.store(moe::startupOptionsParsed, context->args());
-        if (!ret.isOK()) {
-            std::cerr << ret.toString() << std::endl;
-            std::cerr << "try '" << context->args()[0] << " --help' for more information"
-                      << std::endl;
-            ::_exit(EXIT_BADOPTIONS);
-        }
+    MONGO_INITIALIZER_WITH_PREREQUISITES(RocksOptions_PrintOptions,
+                                         ("ServerLogRedirection"))
+    (InitializerContext* context) {
+        rocksGlobalOptions.printOptions();
         return Status::OK();
     }
 }
