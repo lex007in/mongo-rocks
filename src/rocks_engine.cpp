@@ -393,10 +393,10 @@ namespace mongo {
         RocksIndexBase* index;
         if (desc->unique()) {
             index = new RocksUniqueIndex(_db.get(), prefix, ident.toString(),
-                                         Ordering::make(desc->keyPattern()), std::move(config));
+                                         desc, std::move(config));
         } else {
             auto si = new RocksStandardIndex(_db.get(), prefix, ident.toString(),
-                                             Ordering::make(desc->keyPattern()), std::move(config));
+                                             desc, std::move(config));
             if (rocksGlobalOptions.singleDeleteIndex) {
                 si->enableSingleDelete();
             }

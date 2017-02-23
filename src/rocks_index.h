@@ -52,7 +52,7 @@ namespace mongo {
         MONGO_DISALLOW_COPYING(RocksIndexBase);
 
     public:
-        RocksIndexBase(rocksdb::DB* db, std::string prefix, std::string ident, Ordering order,
+        RocksIndexBase(rocksdb::DB* db, std::string prefix, std::string ident, const IndexDescriptor* desc,
                        const BSONObj& config);
 
         virtual SortedDataBuilderInterface* getBulkBuilder(OperationContext* txn,
@@ -76,6 +76,8 @@ namespace mongo {
         static void generateConfig(BSONObjBuilder* configBuilder, int formatVersion,
                                    IndexDescriptor::IndexVersion descVersion);
 
+        std::string dupKeyError(const BSONObj& key);
+
     protected:
         static std::string _makePrefixedKey(const std::string& prefix, const KeyString& encodedKey);
 
@@ -91,6 +93,8 @@ namespace mongo {
         // used to construct RocksCursors
         const Ordering _order;
         KeyString::Version _keyStringVersion;
+        std::string _collectionNamespace;
+        std::string _indexName;
 
         class StandardBulkBuilder;
         class UniqueBulkBuilder;
@@ -99,7 +103,7 @@ namespace mongo {
 
     class RocksUniqueIndex : public RocksIndexBase {
     public:
-        RocksUniqueIndex(rocksdb::DB* db, std::string prefix, std::string ident, Ordering order,
+        RocksUniqueIndex(rocksdb::DB* db, std::string prefix, std::string ident, const IndexDescriptor* desc,
                          const BSONObj& config);
 
         virtual Status insert(OperationContext* txn, const BSONObj& key, const RecordId& loc,
@@ -117,7 +121,7 @@ namespace mongo {
 
     class RocksStandardIndex : public RocksIndexBase {
     public:
-        RocksStandardIndex(rocksdb::DB* db, std::string prefix, std::string ident, Ordering order,
+        RocksStandardIndex(rocksdb::DB* db, std::string prefix, std::string ident, const IndexDescriptor* desc,
                            const BSONObj& config);
 
         virtual Status insert(OperationContext* txn, const BSONObj& key, const RecordId& loc,
