@@ -54,7 +54,7 @@ namespace mongo {
 
     class RocksIndexHarness final : public HarnessHelper {
     public:
-        RocksIndexHarness() : _tempDir(_testNamespace) {
+        RocksIndexHarness() : _order(Ordering::make(BSONObj())), _tempDir(_testNamespace) {
             boost::filesystem::remove_all(_tempDir.path());
             rocksdb::DB* db;
             rocksdb::Options options;
@@ -69,19 +69,12 @@ namespace mongo {
         std::unique_ptr<SortedDataInterface> newSortedDataInterface(bool unique) {
             BSONObjBuilder configBuilder;
             RocksIndexBase::generateConfig(&configBuilder, 3, IndexDescriptor::IndexVersion::kV2);
-
-            BSONObj spec = BSON("key" << BSON("a" << 1) << "name"
-                                      << "testIndex"
-                                      << "ns"
-                                      << "test.rocks");
-
-            IndexDescriptor desc(NULL, "", spec);
-
             if (unique) {
-                return stdx::make_unique<RocksUniqueIndex>(_db.get(), "prefix", "ident", &desc,
-                                                           configBuilder.obj());
+                return stdx::make_unique<RocksUniqueIndex>(_db.get(), "prefix", "ident", _order,
+                                                           configBuilder.obj(), "test.rocks",
+                                                           "testIndex");
             } else {
-                return stdx::make_unique<RocksStandardIndex>(_db.get(), "prefix", "ident", &desc,
+                return stdx::make_unique<RocksStandardIndex>(_db.get(), "prefix", "ident", _order,
                                                              configBuilder.obj());
             }
         }
@@ -93,6 +86,7 @@ namespace mongo {
         }
 
     private:
+        Ordering _order;
         string _testNamespace = "mongo-rocks-sorted-data-test";
         unittest::TempDir _tempDir;
         std::unique_ptr<rocksdb::DB> _db;
